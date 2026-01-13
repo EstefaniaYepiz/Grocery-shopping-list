@@ -21,6 +21,19 @@ function App() {
 	}));
 	const [editingListId, setEditingListId] = useState(null);
 	const [listNameInput, setListNameInput] = useState("");
+	const getInitialTheme = () => {
+		const saved = localStorage.getItem("theme");
+		if (saved) return saved;
+
+		return window.matchMedia("(prefers-color-scheme: dark)").matches
+			? "dark"
+			: "light";
+	};
+
+	const [theme, setTheme] = useState(getInitialTheme);
+	const toggleTheme = () => {
+		setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+	};
 
 	function updateActiveList(updater) {
 		setLists((prevLists) =>
@@ -231,9 +244,24 @@ function App() {
 			items: list.items.filter((item) => !item.inCart),
 		}));
 	}
+	useEffect(() => {
+		localStorage.setItem("theme", theme);
+	}, [theme]);
+	useEffect(() => {
+		const media = window.matchMedia("(prefers-color-scheme: dark)");
+
+		const handler = (e) => {
+			const saved = localStorage.getItem("theme");
+			if (saved) return;
+			setTheme(e.matches ? "dark" : "light");
+		};
+
+		media.addEventListener("change", handler);
+		return () => media.removeEventListener("change", handler);
+	}, []);
 
 	return (
-		<div className="app">
+		<div className={`app ${theme === "dark" ? "dark" : ""}`}>
 			<header className="header">
 				<h1>🛒 Grocery List</h1>
 			</header>
@@ -326,6 +354,16 @@ function App() {
 							onClick={() => setShowStock(!showStock)}
 						>
 							<span className="category-name">Stock</span>
+						</div>
+						<div
+							className={`category pill-toggle ${
+								theme === "dark" ? "active" : ""
+							}`}
+							onClick={toggleTheme}
+						>
+							<span className="category-name">
+								{theme === "dark" ? "🌙 Dark" : "☀️ Light"}
+							</span>
 						</div>
 					</div>
 				</div>
