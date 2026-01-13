@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import Header from "./components/Header";
+import ListsBar from "./components/ListsBar";
+import CategoriesBar from "./components/CategoriesBar";
 
 function App() {
 	const [product, setProduct] = useState("");
@@ -262,110 +265,38 @@ function App() {
 
 	return (
 		<div className={`app ${theme === "dark" ? "dark" : ""}`}>
-			<header className="header">
-				<h1>🛒 Grocery List</h1>
-			</header>
+			<Header />
 
 			<main className="main">
 				<div className="sidebar">
-					<div className="lists">
-						{lists.map((list) => (
-							<div
-								key={list.id}
-								className={`category ${
-									activeListId === list.id ? "active" : ""
-								}`}
-								onClick={() => {
-									if (editingListId !== list.id) {
-										setActiveListId(list.id);
-									}
-								}}
-								onDoubleClick={() => {
-									setEditingListId(list.id);
-									setListNameInput(list.name);
-								}}
-							>
-								{editingListId === list.id ? (
-									<input
-										className="list-rename-input"
-										value={listNameInput}
-										onChange={(e) => setListNameInput(e.target.value)}
-										onBlur={() => saveListName(list.id)}
-										onKeyDown={(e) => {
-											if (e.key === "Enter") saveListName(list.id);
-											if (e.key === "Escape") setEditingListId(null);
-										}}
-										autoFocus
-									/>
-								) : (
-									<>
-										<span className="category-name">{list.name}</span>
+					<ListsBar
+						lists={lists}
+						activeListId={activeListId}
+						onSelectList={setActiveListId}
+						onCreateList={createNewList}
+						onDeleteList={deleteList}
+						onRenameList={saveListName}
+						editingListId={editingListId}
+						setEditingListId={setEditingListId}
+						listNameInput={listNameInput}
+						setListNameInput={setListNameInput}
+					/>
 
-										{lists.length > 1 && (
-											<button
-												className="delete-category"
-												onClick={(e) => {
-													e.stopPropagation();
-													deleteList(list.id);
-												}}
-											>
-												✕
-											</button>
-										)}
-									</>
-								)}
-							</div>
-						))}
-
-						<div className="category add-list" onClick={createNewList}>
-							<span className="category-name">＋ List</span>
-						</div>
-					</div>
-
-					<div className="categories">
-						{categories.map((cat) => (
-							<div
-								key={cat}
-								className={`category ${activeCategory === cat ? "active" : ""}`}
-								onClick={() =>
-									updateActiveList((list) => ({
-										...list,
-										activeCategory: cat,
-									}))
-								}
-							>
-								<span className="category-name">{cat}</span>
-
-								{cat !== "All" && (
-									<button
-										className="delete-category"
-										onClick={(e) => {
-											e.stopPropagation();
-											removeCategory(cat);
-										}}
-									>
-										✕
-									</button>
-								)}
-							</div>
-						))}
-						<div
-							className={`category pill-toggle ${showStock ? "active" : ""}`}
-							onClick={() => setShowStock(!showStock)}
-						>
-							<span className="category-name">Stock</span>
-						</div>
-						<div
-							className={`category pill-toggle ${
-								theme === "dark" ? "active" : ""
-							}`}
-							onClick={toggleTheme}
-						>
-							<span className="category-name">
-								{theme === "dark" ? "🌙 Dark" : "☀️ Light"}
-							</span>
-						</div>
-					</div>
+					<CategoriesBar
+						categories={categories}
+						activeCategory={activeCategory}
+						onSelectCategory={(cat) =>
+							updateActiveList((list) => ({
+								...list,
+								activeCategory: cat,
+							}))
+						}
+						onRemoveCategory={removeCategory}
+						showStock={showStock}
+						onToggleStock={() => setShowStock(!showStock)}
+						theme={theme}
+						onToggleTheme={toggleTheme}
+					/>
 				</div>
 				<div className="add-category">
 					<input
