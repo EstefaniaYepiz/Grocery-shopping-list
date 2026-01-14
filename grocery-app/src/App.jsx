@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import ListsBar from "./components/ListsBar";
-import CategoriesBar from "./components/CategoriesBar";
+import CategoryManager from "./components/CategoryManager";
+import AddItemForm from "./components/AddItemForm";
+import ItemsList from "./components/ItemsList";
+import AddCategoryForm from "./components/AddCategoryForm";
+import RecipePicker from "./components/RecipePicker";
 
 function App() {
 	const [product, setProduct] = useState("");
 	const [brand, setBrand] = useState("");
 	const [category, setCategory] = useState("Fruits");
-
+	const [recipes, setRecipes] = useState([]);
 	const [lists, setLists] = useState([]);
 	const [activeListId, setActiveListId] = useState(null);
 	const [newCategory, setNewCategory] = useState("");
@@ -18,10 +22,6 @@ function App() {
 	const items = activeList?.items || [];
 	const categories = activeList?.categories || ["All"];
 	const activeCategory = activeList?.activeCategory || "All";
-	const listNames = lists.map((list) => ({
-		id: list.id,
-		name: list.name,
-	}));
 	const [editingListId, setEditingListId] = useState(null);
 	const [listNameInput, setListNameInput] = useState("");
 	const getInitialTheme = () => {
@@ -32,7 +32,6 @@ function App() {
 			? "dark"
 			: "light";
 	};
-
 	const [theme, setTheme] = useState(getInitialTheme);
 	const toggleTheme = () => {
 		setTheme((prev) => (prev === "dark" ? "light" : "dark"));
@@ -69,6 +68,9 @@ function App() {
 			if (parsed.showStock !== undefined) {
 				setShowStock(parsed.showStock);
 			}
+			if (parsed.recipes) {
+				setRecipes(parsed.recipes);
+			}
 		}
 		setHasLoaded(true);
 	}, []);
@@ -79,10 +81,11 @@ function App() {
 			lists,
 			activeListId,
 			showStock,
+			recipes,
 		};
 
 		localStorage.setItem("groceryAppData", JSON.stringify(dataToSave));
-	}, [lists, activeListId, showStock, hasLoaded]);
+	}, [lists, activeListId, showStock, hasLoaded, recipes]);
 
 	function addItem() {
 		if (!product.trim()) return;
@@ -168,10 +171,6 @@ function App() {
 			activeCategory:
 				list.activeCategory === categoryToRemove ? "All" : list.activeCategory,
 		}));
-
-		if (activeCategory === categoryToRemove) {
-			setActiveCategory("All");
-		}
 	}
 	function toggleInCart(id) {
 		const updatedItems = items.map((item) =>
@@ -262,6 +261,24 @@ function App() {
 		media.addEventListener("change", handler);
 		return () => media.removeEventListener("change", handler);
 	}, []);
+	function addRecipeToList(recipe) {
+		updateActiveList((list) => {
+			const newItems = recipe.ingredients.map((ing) => ({
+				id: Date.now() + Math.random(),
+				product: ing.product,
+				brand: "",
+				category: ing.category || "Other",
+				quantity: ing.quantity || 1,
+				stock: 0,
+				inCart: false,
+			}));
+
+			return {
+				...list,
+				items: [...list.items, ...newItems],
+			};
+		});
+	}
 
 	return (
 		<div className={`app ${theme === "dark" ? "dark" : ""}`}>
@@ -282,7 +299,7 @@ function App() {
 						setListNameInput={setListNameInput}
 					/>
 
-					<CategoriesBar
+					<CategoryManager
 						categories={categories}
 						activeCategory={activeCategory}
 						onSelectCategory={(cat) =>
@@ -298,142 +315,39 @@ function App() {
 						onToggleTheme={toggleTheme}
 					/>
 				</div>
-				<div className="add-category">
-					<input
-						type="text"
-						placeholder="New category"
-						value={newCategory}
-						onChange={(e) => setNewCategory(e.target.value)}
-					/>
-
-					<button onClick={addCategory}>+</button>
-				</div>
+				<RecipePicker
+					recipes={recipes}
+					onAddRecipe={addRecipeToList}
+					onCreateRecipe={() => setShowRecipeCreator(true)}
+				/>
+				<AddCategoryForm
+					value={newCategory}
+					onChange={setNewCategory}
+					onAdd={addCategory}
+				/>
 				<div className="content">
-					<div className="add-item">
-						<div className="field">
-							<label>Product</label>
-							<input
-								type="text"
-								placeholder="e.g. Eggs"
-								value={product}
-								onChange={(e) => setProduct(e.target.value)}
-							/>
-						</div>
-
-						<div className="field">
-							<label>Brand (optional)</label>
-							<input
-								type="text"
-								placeholder="e.g. Organic Valley"
-								value={brand}
-								onChange={(e) => setBrand(e.target.value)}
-							/>
-						</div>
-
-						<div className="field">
-							<label>Category</label>
-							<select
-								value={category}
-								onChange={(e) => setCategory(e.target.value)}
-							>
-								<option>Fruits</option>
-								<option>Vegetables</option>
-								<option>Dairy</option>
-								<option>Snacks</option>
-							</select>
-						</div>
-
-						<button className="add-button" onClick={addItem}>
-							+ Add Item
-						</button>
-					</div>
-					<div className="items">
-						{notInCartItems.map((item) => (
-							<div
-								className={`item ${item.inCart ? "in-cart" : ""}`}
-								key={item.id}
-							>
-								<input
-									type="checkbox"
-									checked={item.inCart}
-									onChange={() => toggleInCart(item.id)}
-								/>
-
-								<div className="item-info">
-									<strong>{item.product}</strong>
-									{item.brand && <span className="brand">{item.brand}</span>}
-								</div>
-
-								<div className="item-actions">
-									{showStock && (
-										<div className="quantity stock">
-											<span className="label">Home</span>
-											<button onClick={() => decreaseStock(item.id)}>-</button>
-											<span>{item.stock || 0}</span>
-											<button onClick={() => increaseStock(item.id)}>+</button>
-										</div>
-									)}
-									<div className="quantity">
-										<button onClick={() => decreaseQuantity(item.id)}>-</button>
-										<span>{item.quantity}</span>
-										<button onClick={() => increaseQuantity(item.id)}>+</button>
-									</div>
-
-									<button
-										className="remove"
-										onClick={() => removeItem(item.id)}
-									>
-										✕
-									</button>
-								</div>
-							</div>
-						))}
-
-						{inCartItems.length > 0 && (
-							<>
-								<div className="clear-cart">
-									<button onClick={clearInCartItems}>
-										Clear in-cart items
-									</button>
-								</div>
-
-								<div className="divider">In cart</div>
-							</>
-						)}
-
-						{inCartItems.map((item) => (
-							<div
-								className={`item ${item.inCart ? "in-cart" : ""}`}
-								key={item.id}
-							>
-								<input
-									type="checkbox"
-									checked={item.inCart}
-									onChange={() => toggleInCart(item.id)}
-								/>
-
-								<div className="item-info">
-									<strong>{item.product}</strong>
-									{item.brand && <span className="brand">{item.brand}</span>}
-								</div>
-
-								<div className="item-actions">
-									<div className="quantity">
-										<button onClick={() => decreaseQuantity(item.id)}>-</button>
-										<span>{item.quantity}</span>
-										<button onClick={() => increaseQuantity(item.id)}>+</button>
-									</div>
-
-									<button
-										className="remove"
-										onClick={() => removeItem(item.id)}
-									>
-										✕
-									</button>
-								</div>
-							</div>
-						))}
-					</div>
+					<AddItemForm
+						product={product}
+						setProduct={setProduct}
+						brand={brand}
+						setBrand={setBrand}
+						category={category}
+						setCategory={setCategory}
+						categories={categories}
+						onAddItem={addItem}
+					/>
+					<ItemsList
+						notInCartItems={notInCartItems}
+						inCartItems={inCartItems}
+						showStock={showStock}
+						onToggleInCart={toggleInCart}
+						onIncreaseQty={increaseQuantity}
+						onDecreaseQty={decreaseQuantity}
+						onRemoveItem={removeItem}
+						onIncreaseStock={increaseStock}
+						onDecreaseStock={decreaseStock}
+						onClearInCart={clearInCartItems}
+					/>
 				</div>
 			</main>
 		</div>
