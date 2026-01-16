@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 function RecipePicker({ recipes, onAddRecipe, onCreateRecipe }) {
 	const [selectedId, setSelectedId] = useState("");
-
-	const selectedRecipe = recipes.find((r) => r.id === selectedId);
+	const selectedRecipe = recipes.find((r) => r.id === Number(selectedId));
 
 	return (
 		<div className="recipe-picker">

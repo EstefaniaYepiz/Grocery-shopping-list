@@ -6,6 +6,10 @@ import AddItemForm from "./components/AddItemForm";
 import ItemsList from "./components/ItemsList";
 import AddCategoryForm from "./components/AddCategoryForm";
 import RecipePicker from "./components/RecipePicker";
+import RecipeForm from "./components/RecipeForm";
+import ActionsMenu from "./components/ActionsMenu";
+import Modal from "./components/Modal";
+import CategoryModal from "./components/CategoryModal";
 
 function App() {
 	const [product, setProduct] = useState("");
@@ -14,7 +18,6 @@ function App() {
 	const [recipes, setRecipes] = useState([]);
 	const [lists, setLists] = useState([]);
 	const [activeListId, setActiveListId] = useState(null);
-	const [newCategory, setNewCategory] = useState("");
 	const [hasLoaded, setHasLoaded] = useState(false);
 	const [showStock, setShowStock] = useState(true);
 
@@ -36,6 +39,11 @@ function App() {
 	const toggleTheme = () => {
 		setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 	};
+	const [showRecipeCreator, setShowRecipeCreator] = useState(false);
+	const [toast, setToast] = useState(null);
+	const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
 	function updateActiveList(updater) {
 		setLists((prevLists) =>
@@ -152,9 +160,8 @@ function App() {
 	const sortedItems = [...visibleItems].sort(
 		(a, b) => Number(a.inCart) - Number(b.inCart)
 	);
-	function addCategory() {
-		const trimmed = newCategory.trim();
-
+	function addCategory(categoryName) {
+		const trimmed = categoryName.trim();
 		if (!trimmed) return;
 		if (categories.includes(trimmed)) return;
 
@@ -162,8 +169,8 @@ function App() {
 			...list,
 			categories: [...list.categories, trimmed],
 		}));
-		setNewCategory("");
 	}
+
 	function removeCategory(categoryToRemove) {
 		updateActiveList((list) => ({
 			...list,
@@ -262,27 +269,83 @@ function App() {
 		return () => media.removeEventListener("change", handler);
 	}, []);
 	function addRecipeToList(recipe) {
-		updateActiveList((list) => {
-			const newItems = recipe.ingredients.map((ing) => ({
-				id: Date.now() + Math.random(),
-				product: ing.product,
-				brand: "",
-				category: ing.category || "Other",
-				quantity: ing.quantity || 1,
-				stock: 0,
-				inCart: false,
-			}));
+		let added = 0;
+		let merged = 0;
 
-			return {
-				...list,
-				items: [...list.items, ...newItems],
-			};
+		updateActiveList((list) => {
+			const updatedItems = [...list.items];
+
+			recipe.ingredients.forEach((ingredient) => {
+				const existingItem = updatedItems.find(
+					(item) =>
+						item.product.toLowerCase() === ingredient.product.toLowerCase() &&
+						item.category === ingredient.category
+				);
+
+				if (existingItem) {
+					existingItem.quantity += ingredient.quantity || 1;
+					merged++;
+				} else {
+					updatedItems.push({
+						id: Date.now() + Math.random(),
+						product: ingredient.product,
+						brand: "",
+						category: ingredient.category || "Other",
+						quantity: ingredient.quantity || 1,
+						stock: 0,
+						inCart: false,
+					});
+					added++;
+				}
+			});
+
+			return { ...list, items: updatedItems };
+		});
+
+		// 🔔 Visual confirmation
+		setToast({
+			type: "success",
+			message: `${added} item${
+				added !== 1 ? "s" : ""
+			} added · ${merged} merged`,
 		});
 	}
 
+	function saveRecipe(recipe) {
+		setRecipes((prev) => [...prev, recipe]);
+		setShowRecipeCreator(false);
+	}
+	useEffect(() => {
+		if (!toast) return;
+
+		const timer = setTimeout(() => {
+			setToast(null);
+		}, 2200);
+
+		return () => clearTimeout(timer);
+	}, [toast]);
+
 	return (
 		<div className={`app ${theme === "dark" ? "dark" : ""}`}>
-			<Header />
+			{toast && <div className="toast">{toast.message}</div>}
+
+			<Header onOpenMenu={() => setIsMenuOpen(true)} />
+
+			<ActionsMenu
+				open={isMenuOpen}
+				onClose={() => setIsMenuOpen(false)}
+				onToggleTheme={toggleTheme}
+				onToggleStock={() => setShowStock(!showStock)}
+				showStock={showStock}
+				onAddCategory={() => {
+					setIsMenuOpen(false);
+					setIsCategoryModalOpen(true);
+				}}
+				onOpenRecipes={() => {
+					setIsMenuOpen(false);
+					setIsRecipeModalOpen(true);
+				}}
+			/>
 
 			<main className="main">
 				<div className="sidebar">
@@ -309,22 +372,13 @@ function App() {
 							}))
 						}
 						onRemoveCategory={removeCategory}
-						showStock={showStock}
-						onToggleStock={() => setShowStock(!showStock)}
-						theme={theme}
-						onToggleTheme={toggleTheme}
+						// showStock={showStock}
+						// onToggleStock={() => setShowStock(!showStock)}
+						// theme={theme}
+						// onToggleTheme={toggleTheme}
 					/>
 				</div>
-				<RecipePicker
-					recipes={recipes}
-					onAddRecipe={addRecipeToList}
-					onCreateRecipe={() => setShowRecipeCreator(true)}
-				/>
-				<AddCategoryForm
-					value={newCategory}
-					onChange={setNewCategory}
-					onAdd={addCategory}
-				/>
+
 				<div className="content">
 					<AddItemForm
 						product={product}
@@ -348,6 +402,24 @@ function App() {
 						onDecreaseStock={decreaseStock}
 						onClearInCart={clearInCartItems}
 					/>
+					<CategoryModal
+						open={isCategoryModalOpen}
+						onClose={() => setIsCategoryModalOpen(false)}
+						onAddCategory={addCategory}
+					/>
+					<Modal
+						open={isRecipeModalOpen}
+						onClose={() => setIsRecipeModalOpen(false)}
+					>
+						<RecipePicker
+							recipes={recipes}
+							onAddRecipe={(recipe) => {
+								addRecipeToList(recipe);
+								setIsRecipeModalOpen(false);
+							}}
+							onCreateRecipe={() => {}}
+						/>
+					</Modal>
 				</div>
 			</main>
 		</div>

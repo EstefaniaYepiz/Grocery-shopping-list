@@ -34,7 +34,7 @@ function CategoryManager({
 				))}
 			</div>
 
-			<div className="toggle">
+			{/* <div className="toggle">
 				<div
 					className={`category pill-toggle ${showStock ? "active" : ""}`}
 					onClick={onToggleStock}
@@ -48,7 +48,7 @@ function CategoryManager({
 				>
 					{theme === "dark" ? "Dark" : "Light"}
 				</div>
-			</div>
+			</div> */}
 		</>
 	);
 }

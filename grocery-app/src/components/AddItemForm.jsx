@@ -8,44 +8,35 @@ function AddItemForm({
 	categories,
 	onAddItem,
 }) {
+	const handleSubmit = (e) => {
+		e.preventDefault();
+		onAddItem();
+	};
+
 	return (
-		<div className="add-item">
-			<div className="field">
-				<label>Product</label>
-				<input
-					type="text"
-					placeholder="e.g. Eggs"
-					value={product}
-					onChange={(e) => setProduct(e.target.value)}
-				/>
-			</div>
+		<form className="add-item-form" onSubmit={handleSubmit}>
+			<input
+				value={product}
+				onChange={(e) => setProduct(e.target.value)}
+				placeholder="e.g. Eggs"
+			/>
 
-			<div className="field">
-				<label>Brand (optional)</label>
-				<input
-					type="text"
-					placeholder="e.g. Organic Valley"
-					value={brand}
-					onChange={(e) => setBrand(e.target.value)}
-				/>
-			</div>
+			<input
+				value={brand}
+				onChange={(e) => setBrand(e.target.value)}
+				placeholder="Brand (optional)"
+			/>
 
-			<div className="field">
-				<label>Category</label>
-				<select value={category} onChange={(e) => setCategory(e.target.value)}>
-					{categories
-						.filter((c) => c !== "All")
-						.map((cat) => (
-							<option key={cat}>{cat}</option>
-						))}
-				</select>
-			</div>
+			<select value={category} onChange={(e) => setCategory(e.target.value)}>
+				{categories.map((cat) => (
+					<option key={cat} value={cat}>
+						{cat}
+					</option>
+				))}
+			</select>
 
-			<button className="add-button" onClick={onAddItem}>
-				+ Add Item
-			</button>
-		</div>
+			<button type="submit">+ Add Item</button>
+		</form>
 	);
 }
-
 export default AddItemForm;

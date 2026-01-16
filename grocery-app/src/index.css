@@ -57,6 +57,9 @@ body {
 	padding: 12px 16px;
 	background: var(--surface);
 	border-bottom: 1px solid var(--border);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 }
 
 .header h1 {
@@ -371,6 +374,98 @@ button {
 	transition: background-color 0.25s ease, color 0.25s ease,
 		border-color 0.25s ease;
 }
+.toast {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: var(--pill-active);
+	color: var(--bg);
+	padding: 10px 16px;
+	border-radius: 999px;
+	font-size: 0.85rem;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+	z-index: 999;
+	animation: fadeInOut 2.2s ease forwards;
+}
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 1000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.modal {
+	background: var(--surface);
+	color: var(--text);
+	border-radius: 16px;
+	padding: 16px;
+	width: 90%;
+	max-width: 420px;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+.modal-close {
+	background: none;
+	border: none;
+	font-size: 1.2rem;
+	cursor: pointer;
+	float: right;
+}
+.menu-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 900;
+}
+
+.menu {
+	position: absolute;
+	top: 60px;
+	right: 12px;
+	background: var(--surface);
+	border-radius: 12px;
+	padding: 8px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.menu-button {
+	background: none;
+	border: none;
+	text-align: left;
+	padding: 8px;
+	border-radius: 8px;
+	cursor: pointer;
+	color: var(--text);
+}
+
+.menu-button:hover {
+	background: var(--pill);
+}
+
+@keyframes fadeInOut {
+	0% {
+		opacity: 0;
+		transform: translateX(-50%) translateY(6px);
+	}
+	10% {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+	90% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
 /* Tablet */
 @media (min-width: 768px) {
 	.app {
